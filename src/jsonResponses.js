@@ -1,6 +1,9 @@
+const { shuffle } = require('underscore');
+const _ = require('underscore');
+
 // 5 - this will return a random number no bigger than `max`, as a string
 // we will also doing our query parameter validation here
-const getRandomJokeJSON = () => {
+const getRandomJokeJSON = (max = 1) => {
   // Grab from this list
   const jokes = [
     [
@@ -69,31 +72,44 @@ const getRandomJokeJSON = () => {
     ],
   ];
 
-  // Change the hard coded number to the max amount of jokes in the list
-  const jokesMax = 16;
+  // The max amount of jokes in the list
+  const jokesMax = jokes.length;
 
-  // Pick a random joke
-  const number = Math.floor(Math.random() * jokesMax);
+  let max2 = Number(max); // cast `max` to a Number
+  max2 = !max2 ? 1 : max2;
+  max2 = max2 > jokesMax ? jokesMax : max2;
+  max2 = max2 < 1 ? 1 : max2; // if `max` is less than 1 default it to 1
 
-  // Set the values equal to the joke at said number
-  const q = jokes[number][0];
-  const a = jokes[number][1];
+  const randomJokes = [];
+  const shuffledJokes = _.shuffle(jokes);
+  console.log(shuffledJokes);
 
-  // Setting up the JSON format...
-  const randomJoke = {
-    q,
-    a,
-  };
+  for (let i = 0; i < max2; i++) {
+    // Pick a random joke
+    // const number = Math.floor(Math.random() * jokesMax);
+
+    // Set the values equal to the joke at said number
+    const q = shuffledJokes[i][0];
+    const a = shuffledJokes[i][1];
+
+    // Setting up the JSON format...
+    const randomJoke = {
+      q,
+      a,
+    };
+
+    randomJokes.push({ q: randomJoke.q, a: randomJoke.a });
+  }
 
   // send back the JSON to the request
-  return JSON.stringify(randomJoke);
+  return JSON.stringify(randomJokes);
 };
 
-const getRandomJokeResponse = (request, response) => {
+const getRandomJokeResponse = (request, response, params) => {
   response.writeHead(200, {
     'Content-Type': 'application/json',
   }); // send response headers
-  response.write(getRandomJokeJSON()); // send content
+  response.write(getRandomJokeJSON(params.limit)); // send content
   response.end(); // close connection
 };
 

@@ -5,6 +5,8 @@ const http = require('http');
 
 // 2 - pull in URL and query modules (for URL parsing)
 const url = require('url');
+const query = require('querystring');
+
 const htmlHandler = require('./htmlResponses.js');
 const jsonHandler = require('./jsonResponses.js');
 
@@ -13,6 +15,7 @@ const port = process.env.PORT || process.env.NODE_PORT || 3000;
 
 const urlStruct = {
   '/random-joke': jsonHandler.getRandomJokeResponse,
+  '/random-jokes': jsonHandler.getRandomJokeResponse,
   notFound: htmlHandler.get404Response,
 };
 
@@ -26,13 +29,13 @@ const onRequest = (request, response) => {
   // console.log("parsedUrl=", parsedUrl);
   // console.log("pathname=", pathname);
 
-  // const params = query.parse(parsedUrl.query);
-  // const max = params.max;
-  // console.log("params=", params);
-  // console.log("max=", max);
+  const params = query.parse(parsedUrl.query);
+  const { limit } = params;
+  console.log('params=', params);
+  console.log('limit=', limit);
 
   if (urlStruct[pathname]) {
-    urlStruct[pathname](request, response);
+    urlStruct[pathname](request, response, params);
   } else {
     urlStruct.notFound(request, response);
   }

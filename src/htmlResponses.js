@@ -11,7 +11,7 @@ const errorPage = `
     </body>
 </html>`;
 
-const get404Response = (request, response) => {
+const get404Response = (request, response, params, acceptedTypes) => {
   response.writeHead(404, { 'Content-Type': 'text/html' });
   response.write(errorPage);
   response.end();

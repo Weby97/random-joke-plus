@@ -1,9 +1,15 @@
-const { shuffle } = require('underscore');
+const { shuffle, random } = require('underscore');
 const _ = require('underscore');
+
+const respond = (request, response, content, type) => {
+  response.writeHead(200, { 'Content-Type': type }); // send response headers
+  response.write(content); // send content
+  response.end(); // close connection
+};
 
 // 5 - this will return a random number no bigger than `max`, as a string
 // we will also doing our query parameter validation here
-const getRandomJokeJSON = (max = 1) => {
+const getRandomJokeJSON = (request, response, max = 1, acceptedTypes) => {
   // Grab from this list
   const jokes = [
     [
@@ -72,7 +78,7 @@ const getRandomJokeJSON = (max = 1) => {
     ],
   ];
 
-  // The max amount of jokes in the list
+  // The max amount of jokes in the list (16)
   const jokesMax = jokes.length;
 
   let max2 = Number(max); // cast `max` to a Number
@@ -101,16 +107,41 @@ const getRandomJokeJSON = (max = 1) => {
     randomJokes.push({ q: randomJoke.q, a: randomJoke.a });
   }
 
+  if (acceptedTypes.includes('text/xml')) {
+    let responseXML = '';
+    if (max2 > 1) {
+      responseXML += `
+      <jokes>
+        `;
+      randomJokes.forEach((e) => {
+        responseXML
+        += `<joke>
+            <q>${e.q}</q>
+            <a>${e.a}</a>
+          </joke>
+
+        `;
+      });
+      responseXML += '</jokes>';
+    } else {
+      responseXML += `
+      <joke>
+        <q>${randomJokes[0].q}</q>
+        <a>${randomJokes[0].a}</a>
+      </joke>
+        `;
+    }
+    // send back the XML to the request
+    return respond(request, response, responseXML, 'text/xml');
+  }
+
+  const jokeString = JSON.stringify(randomJokes);
   // send back the JSON to the request
-  return JSON.stringify(randomJokes);
+  return respond(request, response, jokeString, 'application/json');
 };
 
-const getRandomJokeResponse = (request, response, params) => {
-  response.writeHead(200, {
-    'Content-Type': 'application/json',
-  }); // send response headers
-  response.write(getRandomJokeJSON(params.limit)); // send content
-  response.end(); // close connection
+const getRandomJokeResponse = (request, response, params, acceptedTypes) => {
+  getRandomJokeJSON(request, response, params.limit, acceptedTypes);
 };
 
 module.exports = {

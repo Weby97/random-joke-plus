@@ -1,9 +1,30 @@
-const { shuffle } = require('underscore');
+const { shuffle, random } = require('underscore');
 const _ = require('underscore');
+
+const respond = (request, response, content, type) => {
+  response.writeHead(200, { 'Content-Type': type }); // send response headers
+  response.write(content); // send content
+  response.end(); // close connection
+};
+
+const respondJSONMeta = (request, response, status, type, stringResponse) => {
+  // ALWAYS GIVE CREDIT - in your code comments and documentation
+  // Source: https://stackoverflow.com/questions/2219526/how-many-bytes-in-a-javascript-string/29955838
+  // Refactored to an arrow function by ACJ
+  const getBinarySize = (string) => Buffer.byteLength(string, 'utf8');
+
+  const headers = {
+    'Content-Type': type,
+    'Content-Length': getBinarySize(stringResponse),
+  };
+
+  response.writeHead(status, headers);
+  response.end();
+};
 
 // 5 - this will return a random number no bigger than `max`, as a string
 // we will also doing our query parameter validation here
-const getRandomJokeJSON = (max = 1) => {
+const getRandomJokeJSON = (request, response, max = 1, acceptedTypes, httpMethod) => {
   // Grab from this list
   const jokes = [
     [
@@ -72,7 +93,7 @@ const getRandomJokeJSON = (max = 1) => {
     ],
   ];
 
-  // The max amount of jokes in the list
+  // The max amount of jokes in the list (16)
   const jokesMax = jokes.length;
 
   let max2 = Number(max); // cast `max` to a Number
@@ -82,7 +103,6 @@ const getRandomJokeJSON = (max = 1) => {
 
   const randomJokes = [];
   const shuffledJokes = _.shuffle(jokes);
-  console.log(shuffledJokes);
 
   for (let i = 0; i < max2; i++) {
     // Pick a random joke
@@ -101,18 +121,53 @@ const getRandomJokeJSON = (max = 1) => {
     randomJokes.push({ q: randomJoke.q, a: randomJoke.a });
   }
 
+  if (acceptedTypes.includes('text/xml')) {
+    let responseXML = '';
+    if (max2 > 1) {
+      responseXML += `
+      <jokes>
+        `;
+      randomJokes.forEach((e) => {
+        responseXML
+        += `<joke>
+            <q>${e.q}</q>
+            <a>${e.a}</a>
+          </joke>
+
+        `;
+      });
+      responseXML += '</jokes>';
+    } else {
+      responseXML += `
+      <joke>
+        <q>${randomJokes[0].q}</q>
+        <a>${randomJokes[0].a}</a>
+      </joke>
+        `;
+    }
+
+    if (httpMethod === 'HEAD') {
+      return respondJSONMeta(request, response, 200, 'text/xml', responseXML);
+    }
+    // send back the XML to the request
+    return respond(request, response, responseXML, 'text/xml');
+  }
+
+  const jokeString = JSON.stringify(randomJokes);
+
+  if (httpMethod === 'HEAD') {
+    return respondJSONMeta(request, response, 200, 'application/json', jokeString);
+  }
   // send back the JSON to the request
-  return JSON.stringify(randomJokes);
+  return respond(request, response, jokeString, 'application/json');
 };
 
-const getRandomJokeResponse = (request, response, params) => {
-  response.writeHead(200, {
-    'Content-Type': 'application/json',
-  }); // send response headers
-  response.write(getRandomJokeJSON(params.limit)); // send content
-  response.end(); // close connection
+const getRandomJokeResponse = (request, response, params, acceptedTypes, httpMethod) => {
+  getRandomJokeJSON(request, response, params.limit, acceptedTypes, httpMethod);
 };
+
+const notFoundMeta = (request, response) => respondJSONMeta(request, response, 404);
 
 module.exports = {
-  getRandomJokeResponse,
+  getRandomJokeResponse, respondJSONMeta, notFoundMeta,
 };

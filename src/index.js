@@ -17,6 +17,7 @@ const urlStruct = {
   '/random-joke': jsonHandler.getRandomJokeResponse,
   '/random-jokes': jsonHandler.getRandomJokeResponse,
   '/default-styles.css': htmlHandler.getCSSResponse,
+  '/lofi-messages.html': htmlHandler.getMessageResponse,
   '/joke-client.html': htmlHandler.getJokePage,
   notFound: htmlHandler.get404Response,
 };
